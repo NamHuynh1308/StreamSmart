@@ -1,15 +1,15 @@
 /*
   SocialHub - High level overview
 
-  - Purpose: a modal Social Hub that shows an activity feed, watch parties, and friends.
-  - Data: starts with in-file mock data (`mockActivities`, `mockWatchParties`).
+  - Purpose: a modal Social Hub that shows an activity feed, messages, and profile.
+  - Data: starts with in-file mock data (`mockActivities`).
   - Interaction: local state (`activeTab`, `activities`) and handlers (`handleLike`, `handleFollow`).
-  - Subcomponents: `ActivityCard`, `WatchPartyCard`, `FriendCard` are defined inline below.
+  - Subcomponents: `ActivityCard` and `FriendCard` are defined inline below.
   - Presentation: uses Tailwind utility classes and `lucide-react` icons.
 */
 
 import { useState } from 'react';
-import { X, Users, User, Heart, MessageCircle, Share2, Play, Clock, TrendingUp, Award, Zap, Eye, UserPlus, ChevronDown, Send } from 'lucide-react';
+import { X, Users, User, Heart, MessageCircle, Share2, TrendingUp, Award, Zap, Eye, UserPlus, ChevronDown, Send } from 'lucide-react';
 
 interface SocialHubProps {
   isOpen: boolean;
@@ -34,23 +34,11 @@ interface Activity {
   isLiked: boolean;
 }
 
-interface WatchParty {
-  id: number;
-  host: string;
-  hostAvatar: string;
-  movieTitle: string;
-  movieImage: string;
-  startTime: string;
-  participants: number;
-  maxParticipants: number;
-  isLive: boolean;
-}
 
 /*
   Mock data
 
   - `mockActivities`: placeholder activity feed entries used to populate the Activity Feed tab.
-  - `mockWatchParties`: placeholder watch party entries used by the Watch Parties tab.
   Replace with real API calls when integrating a backend.
 */
 
@@ -106,30 +94,7 @@ const mockActivities: Activity[] = [
   }
 ];
 
-const mockWatchParties: WatchParty[] = [
-  {
-    id: 1,
-    host: "Alex Rivera",
-    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    movieTitle: "The Quantum Heist",
-    movieImage: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&h=450&fit=crop",
-    startTime: "Starting in 15 min",
-    participants: 8,
-    maxParticipants: 10,
-    isLive: false
-  },
-  {
-    id: 2,
-    host: "Jamie Lee",
-    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-    movieTitle: "Horror Night Marathon",
-    movieImage: "https://images.unsplash.com/photo-1543536448-d209d2d13a1c?w=300&h=450&fit=crop",
-    startTime: "Live Now",
-    participants: 15,
-    maxParticipants: 20,
-    isLive: true
-  }
-];
+// Watch parties removed — not used anymore.
 
 const mockFollowers: Activity['user'][] = [
   { name: 'Sarah Chen', avatar: mockActivities[0].user.avatar, isFollowing: true },
@@ -138,8 +103,8 @@ const mockFollowers: Activity['user'][] = [
 ];
 
 const mockFollowing: Activity['user'][] = [
-  { name: 'Alex Rivera', avatar: mockWatchParties[0].hostAvatar, isFollowing: true },
-  { name: 'Jamie Lee', avatar: mockWatchParties[1].hostAvatar, isFollowing: true }
+  { name: 'Alex Rivera', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', isFollowing: true },
+  { name: 'Jamie Lee', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop', isFollowing: true }
 ];
 
 const profileAvatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop";
@@ -149,7 +114,7 @@ const profileAvatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29
 
   - Props: `isOpen` (visibility) and `onClose` (close callback).
   - Holds local UI state (active tab, activities) and the main handlers.
-  - Renders header, tab bar, and tab-specific content (feed, parties, friends).
+  - Renders header, tab bar, and tab-specific content (feed, messages, profile).
 */
 
 export function SocialHub({ isOpen, onClose }: SocialHubProps) {
@@ -168,8 +133,8 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
   ];
   const achievements = activities.filter(a => a.type === 'achievement');
   const [commentsByActivity, setCommentsByActivity] = useState<Record<number, {user: string; text: string}[]>>(Object.fromEntries(mockActivities.map(a => [a.id, []])));
-  const [followers] = useState<Activity['user'][]>(mockFollowers);
-  const [following] = useState<Activity['user'][]>(mockFollowing);
+  const [followers, setFollowers] = useState<Activity['user'][]>(mockFollowers);
+  const [following, setFollowing] = useState<Activity['user'][]>(mockFollowing);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -199,12 +164,41 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
     ));
   };
 
+  const setFollowForName = (name: string, isFollowing: boolean) => {
+    // Update followers list flags
+    setFollowers(prev => prev.map(u => u.name === name ? { ...u, isFollowing } : u));
+
+    // Update following list: add when following, remove when unfollowing
+    setFollowing(prev => {
+      const exists = prev.find(u => u.name === name);
+      if (isFollowing) {
+        if (exists) return prev.map(u => u.name === name ? { ...u, isFollowing } : u);
+        // try to find avatar from followers or activities
+        const fromFollowers = followers.find(u => u.name === name);
+        const fromActivityUser = activities.find(a => a.user.name === name)?.user;
+        const avatar = fromFollowers?.avatar || fromActivityUser?.avatar || '';
+        return [...prev, { name, avatar, isFollowing }];
+      } else {
+        return prev.filter(u => u.name !== name);
+      }
+    });
+
+    // Update activities to reflect follow status
+    setActivities(prev => prev.map(a => a.user.name === name ? { ...a, user: { ...a.user, isFollowing } } : a));
+  };
+
   const handleFollow = (id: number) => {
-    setActivities(activities.map(activity => 
-      activity.id === id 
-        ? { ...activity, user: { ...activity.user, isFollowing: !activity.user.isFollowing } }
-        : activity
-    ));
+    const target = activities.find(a => a.id === id);
+    if (!target) return;
+    const newVal = !target.user.isFollowing;
+    setActivities(prev => prev.map(activity => activity.id === id ? { ...activity, user: { ...activity.user, isFollowing: newVal } } : activity));
+    setFollowForName(target.user.name, newVal);
+  };
+
+  const handleFollowByName = (name: string) => {
+    const cur = followers.find(u => u.name === name) || following.find(u => u.name === name);
+    const newVal = !(cur?.isFollowing ?? false);
+    setFollowForName(name, newVal);
   };
 
   const handleSubmitComment = (id: number, text: string) => {
@@ -436,7 +430,7 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                       <h4 className="font-bold mb-3">Followers</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {followers.map((u) => (
-                          <FriendCard key={u.name} user={u} onFollow={() => {}} />
+                          <FriendCard key={u.name} user={u} onFollow={() => handleFollowByName(u.name)} />
                         ))}
                       </div>
                     </div>
@@ -447,7 +441,7 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                       <h4 className="font-bold mb-3">Following</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {following.map((u) => (
-                          <FriendCard key={u.name} user={u} onFollow={() => {}} />
+                          <FriendCard key={u.name} user={u} onFollow={() => handleFollowByName(u.name)} />
                         ))}
                       </div>
                     </div>
@@ -681,59 +675,6 @@ function ActivityCard({ activity, onLike, onFollow, comments, onSubmitComment }:
 }
 
 /*
-  WatchPartyCard
-
-  - Presentation for a single watch party.
-  - Shows poster, host info, start time, participants and a Join/Reserve button.
-  - UI-only in this file; hook into backend to enable live/join functionality.
-*/
-
-function WatchPartyCard({ party }: { party: WatchParty }) {
-  return (
-    <div className="bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700 hover:border-red-600 transition">
-      <div className="bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700 hover:border-red-600 transition">
-      <div className="relative">
-        <img
-          src={party.movieImage}
-          alt={party.movieTitle}
-          className="w-full h-40 object-cover"
-        />
-        {party.isLive && (
-          <div className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 animate-pulse">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
-            LIVE
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h4 className="font-bold mb-2">{party.movieTitle}</h4>
-        <div className="flex items-center gap-2 mb-3">
-          <img
-            src={party.hostAvatar}
-            alt={party.host}
-            className="w-6 h-6 rounded-full"
-          />
-          <span className="text-sm text-gray-400">Hosted by {party.host}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm mb-3">
-          <div className="flex items-center gap-2 text-gray-400">
-            <Clock className="w-4 h-4" />
-            {party.startTime}
-          </div>
-          <div className="text-gray-400">
-            {party.participants}/{party.maxParticipants} joined
-          </div>
-        </div>
-        <button className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition font-semibold">
-          {party.isLive ? 'Join Now' : 'Reserve Spot'}
-        </button>
-      </div>
-      </div>
-    </div>
-  );
-}
-
-/*
   FriendCard
 
   - Simple friend list item used by the Friends tab.
@@ -758,7 +699,7 @@ function FriendCard({ user, onFollow }: { user: Activity['user']; onFollow: () =
           className={`px-4 py-2 rounded-lg transition text-sm font-semibold ${
             user.isFollowing
               ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-red-600 hover:bg-red-700 text-white'
           }`}
         >
           {user.isFollowing ? 'Following' : 'Follow'}
