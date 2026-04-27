@@ -160,6 +160,12 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
   const [composerTitle, setComposerTitle] = useState('');
   const [composerMovie, setComposerMovie] = useState('');
   const [composerRating, setComposerRating] = useState<number | null>(null);
+  const [showMoviePicker, setShowMoviePicker] = useState(false);
+  const mockMovieOptions = [
+    'The Quantum Heist',
+    'Horror Night Marathon',
+    'Ultimate Sci-Fi Collection'
+  ];
   const achievements = activities.filter(a => a.type === 'achievement');
   const [commentsByActivity, setCommentsByActivity] = useState<Record<number, {user: string; text: string}[]>>(Object.fromEntries(mockActivities.map(a => [a.id, []])));
   const [followers] = useState<Activity['user'][]>(mockFollowers);
@@ -312,11 +318,11 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                   </div>
                 ) : (
                   <div>
-                      <div className="mb-3">
+                    <div className="mb-3">
                       <input value={composerTitle} onChange={e => setComposerTitle(e.target.value)} placeholder="Title (optional)" className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm mb-2 outline-none" />
                       <div className="flex gap-2 items-center mb-2">
                         <input value={composerMovie} onChange={e => setComposerMovie(e.target.value)} placeholder="Connect a movie (optional)" className="flex-1 bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm outline-none" />
-                        <button className="text-sm text-gray-400">Browse</button>
+                        <button onClick={() => setShowMoviePicker(true)} className="text-sm text-gray-400">Browse</button>
                       </div>
 
                       <div className="flex items-center gap-2 mb-2">
@@ -345,6 +351,20 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                         <button onClick={() => { setComposerExpanded(false); setNewPostText(''); setComposerTitle(''); setComposerMovie(''); }} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-2 rounded-lg">Cancel</button>
                         <button onClick={() => { createPost(); setComposerExpanded(false); setComposerTitle(''); setComposerMovie(''); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Post</button>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {showMoviePicker && (
+                  <div className="mt-2 bg-zinc-900 border border-zinc-700 rounded p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold">Select a movie (mock)</div>
+                      <button onClick={() => setShowMoviePicker(false)} className="text-sm text-gray-400">Close</button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {mockMovieOptions.map(m => (
+                        <button key={m} onClick={() => { setComposerMovie(m); setShowMoviePicker(false); }} className="text-left p-2 rounded hover:bg-zinc-800">{m}</button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -551,7 +571,7 @@ function ActivityCard({ activity, onLike, onFollow, comments, onSubmitComment }:
               <div className="text-sm text-gray-400">{activity.timestamp}</div>
             </div>
           </div>
-          {!activity.user.isFollowing && (
+          {activity.user.name !== 'You' && !activity.user.isFollowing && (
             <button 
               onClick={() => onFollow(activity.id)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg transition text-sm"
