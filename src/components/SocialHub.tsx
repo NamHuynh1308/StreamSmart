@@ -537,7 +537,13 @@ function ActivityCard({ activity, onLike, onFollow, comments, onSubmitComment }:
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write a comment..." className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm outline-none" />
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
+                placeholder="Write a comment..."
+                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm outline-none"
+              />
               <button onClick={submit} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Comment</button>
             </div>
           </div>
