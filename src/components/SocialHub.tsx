@@ -64,7 +64,7 @@ const mockActivities: Activity[] = [
     id: 2,
     user: {
       name: "Mike Johnson",
-      avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop",
+      avatar: "https://images.unsplash.com/photo-1776781205743-33b4c1106adc?q=80&w=1322&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       isFollowing: true
     },
     type: 'achievement',
