@@ -151,13 +151,15 @@ const mockFollowing: Activity['user'][] = [
 */
 
 export function SocialHub({ isOpen, onClose }: SocialHubProps) {
-  const [activeTab, setActiveTab] = useState<'feed' | 'profile' | 'friends'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'messages' | 'profile'>('feed');
   const [activities, setActivities] = useState(mockActivities);
+  const achievements = activities.filter(a => a.type === 'achievement');
   const [commentsByActivity, setCommentsByActivity] = useState<Record<number, {user: string; text: string}[]>>(Object.fromEntries(mockActivities.map(a => [a.id, []])));
   const [followers] = useState<Activity['user'][]>(mockFollowers);
   const [following] = useState<Activity['user'][]>(mockFollowing);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [selectedDM, setSelectedDM] = useState<Activity['user'] | null>(null);
   const [messages, setMessages] = useState<Record<string, { from: string; text: string }[]>>({});
   const [messageText, setMessageText] = useState('');
@@ -233,6 +235,20 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
             </div>
           </button>
           <button
+            onClick={() => setActiveTab('messages')}
+            className={`flex-1 px-6 py-4 font-semibold transition ${
+              activeTab === 'messages'
+                ? 'bg-zinc-800 text-white border-b-2 border-blue-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Messages
+            </div>
+          </button>
+
+          <button
             onClick={() => setActiveTab('profile')}
             className={`flex-1 px-6 py-4 font-semibold transition ${
               activeTab === 'profile'
@@ -245,45 +261,12 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
               Profile
             </div>
           </button>
-          <button
-            onClick={() => setActiveTab('friends')}
-            className={`flex-1 px-6 py-4 font-semibold transition ${
-              activeTab === 'friends'
-                ? 'bg-zinc-800 text-white border-b-2 border-blue-500'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Users className="w-5 h-5" />
-              Friends
-            </div>
-          </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'feed' && (
             <div className="p-6 space-y-6">
-              {/* Quick Stats Bar */}
-              <div className="grid grid-cols-3 gap-4 bg-zinc-800/50 rounded-lg p-4">
-                <div className="text-center">
-                  <Eye className="w-6 h-6 mx-auto mb-1 text-blue-500" />
-                  <div className="text-2xl font-bold">127</div>
-                  <div className="text-xs text-gray-400">Friends Active</div>
-                </div>
-                <div className="text-center">
-                  <Zap className="w-6 h-6 mx-auto mb-1 text-yellow-500" />
-                  <div className="text-2xl font-bold">45</div>
-                  <div className="text-xs text-gray-400">New Activities</div>
-                </div>
-                <div className="text-center">
-                  <Award className="w-6 h-6 mx-auto mb-1 text-purple-500" />
-                  <div className="text-2xl font-bold">12</div>
-                  <div className="text-xs text-gray-400">Achievements</div>
-                </div>
-                
-              </div>
-
               {/* Activity Feed */}
               {activities.map(activity => (
                 <ActivityCard 
@@ -361,13 +344,20 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                     {activities.slice(0, 3).map(a => (
                       <ActivityCard key={a.id} activity={a} onLike={handleLike} onFollow={handleFollow} comments={commentsByActivity[a.id] || []} onSubmitComment={handleSubmitComment} />
                     ))}
+                    <button onClick={() => setShowAchievements(!showAchievements)} className="flex items-center gap-3 bg-zinc-800 border border-zinc-700 px-3 py-2 rounded-lg">
+                      <div>
+                        <div className="text-lg font-bold">{achievements.length}</div>
+                        <div className="text-xs text-gray-400">Achievements</div>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${showAchievements ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {activeTab === 'friends' && (
+          {activeTab === 'messages' && (
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Contacts list */}
