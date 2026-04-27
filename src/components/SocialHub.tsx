@@ -1,3 +1,13 @@
+/*
+  SocialHub - High level overview
+
+  - Purpose: a modal Social Hub that shows an activity feed, watch parties, and friends.
+  - Data: starts with in-file mock data (`mockActivities`, `mockWatchParties`).
+  - Interaction: local state (`activeTab`, `activities`) and handlers (`handleLike`, `handleFollow`).
+  - Subcomponents: `ActivityCard`, `WatchPartyCard`, `FriendCard` are defined inline below.
+  - Presentation: uses Tailwind utility classes and `lucide-react` icons.
+*/
+
 import { useState } from 'react';
 import { X, Users, Heart, MessageCircle, Share2, Play, Clock, TrendingUp, Award, Zap, Eye, UserPlus, Settings } from 'lucide-react';
 
@@ -35,6 +45,14 @@ interface WatchParty {
   maxParticipants: number;
   isLive: boolean;
 }
+
+/*
+  Mock data
+
+  - `mockActivities`: placeholder activity feed entries used to populate the Activity Feed tab.
+  - `mockWatchParties`: placeholder watch party entries used by the Watch Parties tab.
+  Replace with real API calls when integrating a backend.
+*/
 
 const mockActivities: Activity[] = [
   {
@@ -113,8 +131,16 @@ const mockWatchParties: WatchParty[] = [
   }
 ];
 
+/*
+  SocialHub component (main)
+
+  - Props: `isOpen` (visibility) and `onClose` (close callback).
+  - Holds local UI state (active tab, activities) and the main handlers.
+  - Renders header, tab bar, and tab-specific content (feed, parties, friends).
+*/
+
 export function SocialHub({ isOpen, onClose }: SocialHubProps) {
-  const [activeTab, setActiveTab] = useState<'feed' | 'parties' | 'friends'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'profile' | 'friends'>('feed');
   const [activities, setActivities] = useState(mockActivities);
 
   const handleLike = (id: number) => {
@@ -139,7 +165,7 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-zinc-900 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-red-800 to-red-600 p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Users className="w-8 h-8" />
             <div>
@@ -171,17 +197,16 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
             </div>
           </button>
           <button
-            onClick={() => setActiveTab('parties')}
+            onClick={() => setActiveTab('profile')}
             className={`flex-1 px-6 py-4 font-semibold transition ${
-              activeTab === 'parties'
+              activeTab === 'profile'
                 ? 'bg-zinc-800 text-white border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Play className="w-5 h-5" />
-              Watch Parties
-              <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">LIVE</span>
+              <Settings className="w-5 h-5" />
+              Profile
             </div>
           </button>
           <button
@@ -204,7 +229,7 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
           {activeTab === 'feed' && (
             <div className="p-6 space-y-6">
               {/* Quick Stats Bar */}
-              <div className="grid grid-cols-4 gap-4 bg-zinc-800/50 rounded-lg p-4">
+              <div className="grid grid-cols-3 gap-4 bg-zinc-800/50 rounded-lg p-4">
                 <div className="text-center">
                   <Eye className="w-6 h-6 mx-auto mb-1 text-blue-500" />
                   <div className="text-2xl font-bold">127</div>
@@ -220,11 +245,7 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                   <div className="text-2xl font-bold">12</div>
                   <div className="text-xs text-gray-400">Achievements</div>
                 </div>
-                <div className="text-center">
-                  <Users className="w-6 h-6 mx-auto mb-1 text-green-500" />
-                  <div className="text-2xl font-bold">3</div>
-                  <div className="text-xs text-gray-400">Watch Parties</div>
-                </div>
+                
               </div>
 
               {/* Activity Feed */}
@@ -239,28 +260,34 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
             </div>
           )}
 
-          {activeTab === 'parties' && (
+          {activeTab === 'profile' && (
             <div className="p-6 space-y-6">
-              <div className="bg-gradient-to-r from-red-900/50 to-purple-900/50 border border-red-700/50 rounded-lg p-6">
-                <div className="flex items-start gap-3 mb-4">
-                  <Play className="w-6 h-6 text-red-500 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Watch Together with Friends</h3>
-                    <p className="text-gray-300">Host or join watch parties to enjoy movies simultaneously with friends. Real-time reactions, chat, and shared experiences!</p>
+              <div className="bg-zinc-800 rounded-lg p-6 flex items-center gap-4">
+                <img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop"
+                  alt="Your avatar"
+                  className="w-24 h-24 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="text-xl font-bold mb-1">Your Name</h3>
+                  <p className="text-gray-300">Short bio or status goes here. Customize in the profile tab.</p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold">Edit Profile</button>
+                    <button className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition">Settings</button>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockWatchParties.map(party => (
-                  <WatchPartyCard key={party.id} party={party} />
-                ))}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+                  <h4 className="font-bold mb-2">Recent Activity</h4>
+                  <div className="space-y-3">
+                    {activities.slice(0, 3).map(a => (
+                      <ActivityCard key={a.id} activity={a} onLike={handleLike} onFollow={handleFollow} />
+                    ))}
+                  </div>
+                </div>
               </div>
-
-              <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                <Play className="w-5 h-5" />
-                Create Your Own Watch Party
-              </button>
             </div>
           )}
 
@@ -290,6 +317,14 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
     </div>
   );
 }
+
+/*
+  ActivityCard
+
+  - Presentation for a single activity item in the feed.
+  - Shows user header, media, rating/comment, and action buttons (like, comment, share).
+  - Calls `onLike` and `onFollow` passed from the parent to update state.
+*/
 
 function ActivityCard({ activity, onLike, onFollow }: { activity: Activity; onLike: (id: number) => void; onFollow: (id: number) => void }) {
   return (
@@ -377,6 +412,14 @@ function ActivityCard({ activity, onLike, onFollow }: { activity: Activity; onLi
   );
 }
 
+/*
+  WatchPartyCard
+
+  - Presentation for a single watch party.
+  - Shows poster, host info, start time, participants and a Join/Reserve button.
+  - UI-only in this file; hook into backend to enable live/join functionality.
+*/
+
 function WatchPartyCard({ party }: { party: WatchParty }) {
   return (
     <div className="bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700 hover:border-blue-600 transition">
@@ -419,6 +462,13 @@ function WatchPartyCard({ party }: { party: WatchParty }) {
     </div>
   );
 }
+
+/*
+  FriendCard
+
+  - Simple friend list item used by the Friends tab.
+  - Displays avatar, name and follow/following button which calls `onFollow`.
+*/
 
 function FriendCard({ user, onFollow }: { user: Activity['user']; onFollow: () => void }) {
   return (
