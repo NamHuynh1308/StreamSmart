@@ -9,7 +9,7 @@
 */
 
 import { useState } from 'react';
-import { X, Users, Heart, MessageCircle, Share2, Play, Clock, TrendingUp, Award, Zap, Eye, UserPlus, Settings, ChevronDown, Send } from 'lucide-react';
+import { X, Users, User, Heart, MessageCircle, Share2, Play, Clock, TrendingUp, Award, Zap, Eye, UserPlus, ChevronDown, Send } from 'lucide-react';
 
 interface SocialHubProps {
   isOpen: boolean;
@@ -142,6 +142,8 @@ const mockFollowing: Activity['user'][] = [
   { name: 'Jamie Lee', avatar: mockWatchParties[1].hostAvatar, isFollowing: true }
 ];
 
+const profileAvatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop";
+
 /*
   SocialHub component (main)
 
@@ -153,6 +155,11 @@ const mockFollowing: Activity['user'][] = [
 export function SocialHub({ isOpen, onClose }: SocialHubProps) {
   const [activeTab, setActiveTab] = useState<'feed' | 'messages' | 'profile'>('feed');
   const [activities, setActivities] = useState(mockActivities);
+  const [newPostText, setNewPostText] = useState('');
+  const [composerExpanded, setComposerExpanded] = useState(false);
+  const [composerTitle, setComposerTitle] = useState('');
+  const [composerMovie, setComposerMovie] = useState('');
+  const [composerRating, setComposerRating] = useState<number | null>(null);
   const achievements = activities.filter(a => a.type === 'achievement');
   const [commentsByActivity, setCommentsByActivity] = useState<Record<number, {user: string; text: string}[]>>(Object.fromEntries(mockActivities.map(a => [a.id, []])));
   const [followers] = useState<Activity['user'][]>(mockFollowers);
@@ -195,6 +202,29 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
     const newMsg = { from: 'You', text: messageText.trim() };
     setMessages({ ...messages, [key]: [...thread, newMsg] });
     setMessageText('');
+  };
+
+  const createPost = () => {
+    if (!newPostText.trim()) return;
+    const p: Activity = {
+      id: Date.now(),
+      user: { name: 'You', avatar: profileAvatar, isFollowing: false },
+      type: 'diary',
+      movieTitle: composerTitle || 'Post',
+      movieImage: composerMovie ? 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?w=300&h=450&fit=crop' : '',
+      comment: newPostText.trim(),
+      timestamp: 'Just now',
+      likes: 0,
+      comments: 0,
+      isLiked: false
+    };
+    if (composerRating && composerRating > 0) {
+      // @ts-ignore allow optional rating
+      p.rating = composerRating;
+    }
+    setActivities([p, ...activities]);
+    setNewPostText('');
+    setComposerRating(null);
   };
 
   if (!isOpen) return null;
@@ -257,7 +287,7 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Settings className="w-5 h-5" />
+              <User className="w-5 h-5" />
               Profile
             </div>
           </button>
@@ -267,6 +297,59 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'feed' && (
             <div className="p-6 space-y-6">
+
+              {/* Compact composer: expands when user clicks Start Post */}
+              <div className="bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+                {!composerExpanded ? (
+                  <div className="flex items-center gap-3">
+                    <img src={profileAvatar} alt="you" className="w-10 h-10 rounded-full object-cover" />
+                    <input
+                      onFocus={() => setComposerExpanded(true)}
+                      placeholder="What's on your mind?"
+                      className="flex-1 bg-zinc-900 border border-zinc-700 rounded-full px-4 py-2 text-sm outline-none"
+                    />
+                    <button onClick={() => setComposerExpanded(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-full">Start Post</button>
+                  </div>
+                ) : (
+                  <div>
+                      <div className="mb-3">
+                      <input value={composerTitle} onChange={e => setComposerTitle(e.target.value)} placeholder="Title (optional)" className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm mb-2 outline-none" />
+                      <div className="flex gap-2 items-center mb-2">
+                        <input value={composerMovie} onChange={e => setComposerMovie(e.target.value)} placeholder="Connect a movie (optional)" className="flex-1 bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm outline-none" />
+                        <button className="text-sm text-gray-400">Browse</button>
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-sm text-gray-300">Rating:</div>
+                        <div className="flex items-center gap-1">
+                          {[1,2,3,4,5].map(n => (
+                            <button key={n} onClick={() => setComposerRating(n)} className={`p-1 ${composerRating && composerRating >= n ? 'text-red-500' : 'text-gray-500'}`}>
+                              <Heart className="w-4 h-4" />
+                            </button>
+                          ))}
+                          <button onClick={() => setComposerRating(null)} className="text-xs text-gray-400 ml-2">Clear</button>
+                        </div>
+                      </div>
+
+                      <textarea
+                        value={newPostText}
+                        onChange={(e) => setNewPostText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); createPost(); } }}
+                        placeholder="Write your post..."
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-md p-3 text-sm resize-none h-28 mb-3 outline-none"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs text-gray-400">You can optionally add a title or connect a movie.</div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { setComposerExpanded(false); setNewPostText(''); setComposerTitle(''); setComposerMovie(''); }} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-2 rounded-lg">Cancel</button>
+                        <button onClick={() => { createPost(); setComposerExpanded(false); setComposerTitle(''); setComposerMovie(''); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Post</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Activity Feed */}
               {activities.map(activity => (
                 <ActivityCard 
@@ -354,6 +437,17 @@ export function SocialHub({ isOpen, onClose }: SocialHubProps) {
                   </div>
                 </div>
               </div>
+
+              {showAchievements && (
+                <div className="mt-4 bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+                  <h4 className="font-bold mb-3">Achievements</h4>
+                  <div className="space-y-3">
+                    {achievements.map(a => (
+                      <ActivityCard key={a.id} activity={a} onLike={handleLike} onFollow={handleFollow} comments={commentsByActivity[a.id] || []} onSubmitComment={handleSubmitComment} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -468,12 +562,14 @@ function ActivityCard({ activity, onLike, onFollow, comments, onSubmitComment }:
         </div>
 
         {/* Content */}
-        <div className="flex gap-4">
-          <img
-            src={activity.movieImage}
-            alt={activity.movieTitle}
-            className="w-24 h-36 object-cover rounded flex-shrink-0"
-          />
+          <div className="flex gap-4">
+          {activity.movieImage ? (
+            <img
+              src={activity.movieImage}
+              alt={activity.movieTitle}
+              className="w-24 h-36 object-cover rounded flex-shrink-0"
+            />
+          ) : null}
           <div className="flex-1">
             <h4 className="font-bold mb-2">{activity.movieTitle}</h4>
             {activity.rating && (
