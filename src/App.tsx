@@ -7,7 +7,7 @@ import { SmartFilters } from './components/SmartFilters';
 import { MovieGrid } from './components/MovieGrid';
 import { AIChatPanel } from './components/AIChatPanel';
 import { ReviewsPanel } from './components/ReviewsPanel';
-import { MovieDiary } from './components/MovieDiary';
+import { AchievementsPanel } from './components/AchievementsPanel';
 import { SocialHub } from './components/SocialHub';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 
@@ -15,7 +15,7 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [reviewsPanelOpen, setReviewsPanelOpen] = useState(false);
-  const [diaryOpen, setDiaryOpen] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [socialHubOpen, setSocialHubOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState('The Quantum Heist');
@@ -30,7 +30,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Header 
-        onOpenDiary={() => setDiaryOpen(true)}
+        onOpenAchievements={() => setAchievementsOpen(true)}
         onOpenSocial={() => setSocialHubOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
       />
@@ -80,9 +80,9 @@ export default function App() {
         movieTitle={selectedMovie}
       />
       
-      <MovieDiary 
-        isOpen={diaryOpen}
-        onClose={() => setDiaryOpen(false)}
+      <AchievementsPanel
+        isOpen={achievementsOpen}
+        onClose={() => setAchievementsOpen(false)}
       />
       
       <SocialHub 

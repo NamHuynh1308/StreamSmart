@@ -250,10 +250,7 @@ export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
             <Search className="w-3 h-3" />
             Scene Search
           </button>
-          <button className="flex items-center gap-1 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-full transition">
-            <Users className="w-3 h-3" />
-            Watch Party
-          </button>
+          {/* Watch Party removed */}
           <button className="flex items-center gap-1 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-full transition">
             <Clock className="w-3 h-3" />
             Reminders
