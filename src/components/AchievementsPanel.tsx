@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 
 interface AchievementsPanelProps {
   isOpen: boolean;
@@ -24,9 +25,13 @@ export function AchievementsPanel({ isOpen, onClose }: AchievementsPanelProps) {
       <div className="bg-zinc-900 rounded-lg w-full max-w-2xl p-6 border border-zinc-700">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold">Achievements</h3>
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="text-sm text-gray-400 hover:text-white">Close</button>
-          </div>
+          <button
+            onClick={onClose}
+            className="bg-white/10 hover:bg-white/20 rounded-full p-2 transition"
+            aria-label="Close achievements"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="space-y-4">

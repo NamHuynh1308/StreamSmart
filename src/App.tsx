@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { Header } from './components/Header';
+import { LoginPage } from './components/LoginPage';
 import { HeroSection } from './components/HeroSection';
 import { ContinueWatching } from './components/ContinueWatching';
 import { SmartFilters } from './components/SmartFilters';
@@ -12,6 +13,7 @@ import { SocialHub } from './components/SocialHub';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [reviewsPanelOpen, setReviewsPanelOpen] = useState(false);
@@ -27,12 +29,24 @@ export default function App() {
     setReviewsPanelOpen(true);
   };
 
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header 
         onOpenAchievements={() => setAchievementsOpen(true)}
         onOpenSocial={() => setSocialHubOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
+        onLogout={() => {
+          setIsChatOpen(false);
+          setReviewsPanelOpen(false);
+          setAchievementsOpen(false);
+          setSocialHubOpen(false);
+          setAnalyticsOpen(false);
+          setIsLoggedIn(false);
+        }}
       />
       
       <HeroSection 

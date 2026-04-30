@@ -5,9 +5,10 @@ interface HeaderProps {
   onOpenSocial: () => void;
   onOpenAnalytics: () => void;
   onOpenAchievements: () => void;
+  onLogout: () => void;
 }
 
-export function Header({ onOpenSocial, onOpenAnalytics, onOpenAchievements }: HeaderProps) {
+export function Header({ onOpenSocial, onOpenAnalytics, onOpenAchievements, onLogout }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-b from-black to-transparent">
@@ -47,7 +48,7 @@ export function Header({ onOpenSocial, onOpenAnalytics, onOpenAchievements }: He
             <div className="absolute right-0 top-full mt-4 bg-zinc-900 border border-zinc-700 rounded-lg p-3 w-44 shadow-xl">
               <button className="w-full text-left px-3 py-2 rounded hover:bg-zinc-800" onClick={() => { setMenuOpen(false); /* profile settings placeholder */ }}>Profile Settings</button>
               <button className="w-full text-left px-3 py-2 rounded hover:bg-zinc-800" onClick={() => { setMenuOpen(false); onOpenAchievements(); }}>Achievements</button>
-              <button className="w-full text-left px-3 py-2 rounded hover:bg-zinc-800" onClick={() => { setMenuOpen(false); /* logout placeholder */ }}>Logout</button>
+              <button className="w-full text-left px-3 py-2 rounded hover:bg-zinc-800" onClick={() => { setMenuOpen(false); onLogout(); }}>Logout</button>
             </div>
           )}
         </div>
