@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { Header } from './components/Header';
+import { LoginPage } from './components/LoginPage';
 import { HeroSection } from './components/HeroSection';
 import { ContinueWatching } from './components/ContinueWatching';
 import { SmartFilters } from './components/SmartFilters';
 import { MovieGrid } from './components/MovieGrid';
 import { AIChatPanel } from './components/AIChatPanel';
 import { ReviewsPanel } from './components/ReviewsPanel';
-import { MovieDiary } from './components/MovieDiary';
+import { AchievementsPanel } from './components/AchievementsPanel';
 import { SocialHub } from './components/SocialHub';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [reviewsPanelOpen, setReviewsPanelOpen] = useState(false);
-  const [diaryOpen, setDiaryOpen] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [socialHubOpen, setSocialHubOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState('The Quantum Heist');
@@ -27,12 +29,24 @@ export default function App() {
     setReviewsPanelOpen(true);
   };
 
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header 
-        onOpenDiary={() => setDiaryOpen(true)}
+        onOpenAchievements={() => setAchievementsOpen(true)}
         onOpenSocial={() => setSocialHubOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
+        onLogout={() => {
+          setIsChatOpen(false);
+          setReviewsPanelOpen(false);
+          setAchievementsOpen(false);
+          setSocialHubOpen(false);
+          setAnalyticsOpen(false);
+          setIsLoggedIn(false);
+        }}
       />
       
       <HeroSection 
@@ -80,9 +94,9 @@ export default function App() {
         movieTitle={selectedMovie}
       />
       
-      <MovieDiary 
-        isOpen={diaryOpen}
-        onClose={() => setDiaryOpen(false)}
+      <AchievementsPanel
+        isOpen={achievementsOpen}
+        onClose={() => setAchievementsOpen(false)}
       />
       
       <SocialHub 

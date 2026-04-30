@@ -1,4 +1,4 @@
-import { Smile, Zap, Heart, Brain, Users, Sparkles } from 'lucide-react';
+import { Smile, Zap, Heart, Brain, Sparkles } from 'lucide-react';
 
 interface SmartFiltersProps {
   activeFilters: string[];
@@ -10,7 +10,6 @@ const filters = [
   { id: 'intense', label: 'High Energy', icon: Zap, color: 'from-purple-500 to-pink-500' },
   { id: 'romantic', label: 'Romantic', icon: Heart, color: 'from-red-500 to-pink-500' },
   { id: 'thoughtful', label: 'Mind Bending', icon: Brain, color: 'from-blue-500 to-cyan-500' },
-  { id: 'social', label: 'Watch Party', icon: Users, color: 'from-green-500 to-emerald-500' },
   { id: 'surprise', label: 'Surprise Me', icon: Sparkles, color: 'from-indigo-500 to-purple-500' },
 ];
 
