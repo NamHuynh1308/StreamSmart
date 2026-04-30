@@ -1,26 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Mic, Plus, Clock, Users, Search, X } from 'lucide-react';
+import { Send, Sparkles, Mic, Clock, Users, Search, X } from 'lucide-react';
 
-interface Message {
-  id: number;
-  text: string;
-  sender: 'user' | 'ai';
-  timestamp: Date;
-  suggestions?: string[];
-  quickActions?: QuickAction[];
+// Define structure for AI movie recommendation
+interface MovieRecommendation {
+  title: string;
+  description: string;
 }
 
+// Define quick action types (buttons under each movie)
 interface QuickAction {
   type: 'play' | 'add' | 'remind' | 'party';
   label: string;
   movieTitle?: string;
 }
 
+// Define message structure for chat system
+interface Message {
+  id: number;
+  text?: string; // Plain text message
+  sender: 'user' | 'ai'; // Who sent the message
+  timestamp: Date;
+  suggestions?: string[]; // Suggested prompts for user
+  movies?: MovieRecommendation[]; // Structured movie list
+}
+
+// Props to control panel visibility
 interface AIChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+// Initial AI greeting message when panel opens
 const initialMessages: Message[] = [
   {
     id: 1,
@@ -37,61 +47,84 @@ const initialMessages: Message[] = [
 ];
 
 export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
+
+  // Store all chat messages (user + AI)
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  // Store current input text from user
   const [inputValue, setInputValue] = useState('');
+
+  // Track AI typing state for loading indicator
   const [isTyping, setIsTyping] = useState(false);
+
+  // Track voice input state (microphone toggle)
   const [isListening, setIsListening] = useState(false);
+
+  // Ref to scroll chat to latest message
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll chat to bottom smoothly
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Auto-scroll whenever messages update
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Simulated voice input handler
   const handleVoiceInput = () => {
-    setIsListening(!isListening);
-    // Simulate voice recognition
+    setIsListening(!isListening); // Toggle listening state
+
     if (!isListening) {
+      // Simulate voice recognition delay
       setTimeout(() => {
-        setInputValue("Show me sci-fi movies");
-        setIsListening(false);
+        setInputValue("Show me sci-fi movies"); // Auto-fill input
+        setIsListening(false); // Stop listening
       }, 2000);
     }
   };
 
+  // Handle quick action buttons (Play, Add, Remind, Party)
   const handleQuickAction = (action: QuickAction) => {
     let message = '';
+
+    // Determine message based on action type
     switch (action.type) {
       case 'play':
-        message = `🎬 Started playing "${action.movieTitle}"`;
+        message = `🎬 Now playing "${action.movieTitle}"... Enjoy!`;
         break;
       case 'add':
-        message = `✅ Added "${action.movieTitle}" to your list`;
+        message = `✅ "${action.movieTitle}" added to your watchlist`;
         break;
       case 'remind':
         message = `⏰ Reminder set for "${action.movieTitle}"`;
         break;
       case 'party':
-        message = `🎉 Watch party mode activated for "${action.movieTitle}"`;
+        message = `🎉 Watch party started for "${action.movieTitle}"`;
         break;
     }
-    
+
+    // Create system message from action
     const systemMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: message,
       sender: 'ai',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
+
+    // Add system message to chat
     setMessages(prev => [...prev, systemMessage]);
   };
 
+  // Handle sending message to AI
   const handleSend = async (text: string) => {
+
+    // Prevent sending empty input
     if (!text.trim()) return;
 
+    // Create user message object
     const userMessage: Message = {
       id: Date.now(),
       text,
@@ -99,182 +132,226 @@ export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Add user message to chat
+    setMessages(prev => [...prev, userMessage]);
+
+    // Clear input field
     setInputValue("");
+
+    // Show typing indicator
     setIsTyping(true);
 
     try {
+      // Send request to backend AI server
       const res = await fetch("http://localhost:8080/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text }), // Send user query
       });
 
       const data = await res.json();
 
+      let parsedMovies: MovieRecommendation[] | null = null;
+
+      try {
+        // Try parsing AI response as structured JSON (movie list)
+        parsedMovies = JSON.parse(data.reply);
+      } catch {
+        // If parsing fails, treat as plain text
+        parsedMovies = null;
+      }
+
+      // Create AI message (either structured or text)
       const aiMessage: Message = {
         id: Date.now() + 1,
-        text: data.reply,
         sender: "ai",
         timestamp: new Date(),
+        movies: parsedMovies || undefined, // Structured movies if valid JSON
+        text: parsedMovies ? undefined : data.reply, // Otherwise plain text
       };
 
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
-        id: Date.now() + 2,
-        text: "Unable to reach AI server.",
-        sender: "ai",
-        timestamp: new Date(),
-      };
+      // Add AI message to chat
+      setMessages(prev => [...prev, aiMessage]);
 
-      setMessages((prev) => [...prev, errorMessage]);
+    } catch {
+      // Handle API failure
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: "❌ Unable to reach AI server.",
+          sender: "ai",
+          timestamp: new Date(),
+        }
+      ]);
     }
 
+    // Hide typing indicator
     setIsTyping(false);
   };
 
+  // Do not render panel if closed
   if (!isOpen) return null;
 
   return (
     <div className="fixed bottom-0 right-0 z-50 w-full md:w-[420px] h-[600px] bg-zinc-900 border-l border-zinc-800 flex flex-col shadow-2xl">
-      {/* Header */}
+
+      {/* Header section */}
       <div className="bg-gradient-to-r from-red-600 to-pink-600 p-4 flex items-center gap-3">
-        <div className="bg-white/20 p-2 rounded-full">
-          <Sparkles className="w-5 h-5" />
-        </div>
+        <Sparkles className="w-5 h-5" />
         <div className="flex-1">
           <h3 className="font-semibold">AI Movie Assistant</h3>
           <p className="text-xs text-white/80">Always here to help you discover</p>
         </div>
-        <button
-    onClick={onClose}
-    className="p-2 rounded-full hover:bg-white/20 transition"
-    aria-label="Close AI chat"
-  >
-    <X className="w-5 h-5" />
-  </button>
-</div>
 
-      {/* Quick Access Features */}
-      <div className="bg-zinc-800/50 p-3 border-b border-zinc-800">
-        <div className="flex gap-2 text-xs">
-          <button className="flex items-center gap-1 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-full transition">
-            <Search className="w-3 h-3" />
-            Scene Search
-          </button>
-          <button className="flex items-center gap-1 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-full transition">
-            <Clock className="w-3 h-3" />
-            Reminders
-          </button>
-        </div>
+        {/* Close panel button */}
+        <button onClick={onClose}>
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* Messages */}
+      {/* Quick access feature buttons */}
+      <div className="p-3 flex gap-2">
+        <button className="bg-zinc-700 px-3 py-1.5 rounded-full text-xs flex items-center gap-1">
+          <Search className="w-3 h-3" /> Scene Search
+        </button>
+        <button className="bg-zinc-700 px-3 py-1.5 rounded-full text-xs flex items-center gap-1">
+          <Clock className="w-3 h-3" /> Reminders
+        </button>
+      </div>
+
+      {/* Chat messages container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div key={message.id}>
+
+            {/* Align message based on sender */}
             <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                  message.sender === 'user'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-zinc-800 text-gray-100'
-                }`}
-              >
-                <p className="text-sm">{message.text}</p>
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.sender === 'user' ? 'bg-red-600 text-white' : 'bg-zinc-800 text-gray-100'}`}>
+
+                {/* If AI returns structured movie list */}
+                {message.movies ? (
+                  <div className="space-y-3">
+
+                    {message.movies.map((movie, idx) => (
+                      <div key={idx} className="bg-zinc-700 rounded-xl p-3 space-y-2 hover:scale-[1.02] transition">
+
+                        {/* Dynamic movie image */}
+                        <img
+                          src={`https://source.unsplash.com/300x200/?movie,${movie.title}`}
+                          className="rounded-lg w-full"
+                        />
+
+                        {/* Movie title */}
+                        <h4 className="font-semibold">{movie.title}</h4>
+
+                        {/* Movie description */}
+                        <p className="text-xs text-gray-300">{movie.description}</p>
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2 mt-2">
+
+                          {/* Play action */}
+                          <button
+                            onClick={() =>
+                              handleQuickAction({ type: 'play', label: 'Play', movieTitle: movie.title })
+                            }
+                            className="text-xs bg-red-600 px-3 py-1 rounded"
+                          >
+                            ▶ Play
+                          </button>
+
+                          {/* Add to list */}
+                          <button
+                            onClick={() =>
+                              handleQuickAction({ type: 'add', label: 'Add', movieTitle: movie.title })
+                            }
+                            className="text-xs bg-zinc-600 px-3 py-1 rounded"
+                          >
+                            + My List
+                          </button>
+
+                          {/* Show details inline */}
+                          <button
+                            onClick={() =>
+                              setMessages(prev => [
+                                ...prev,
+                                {
+                                  id: Date.now(),
+                                  sender: 'ai',
+                                  timestamp: new Date(),
+                                  text: `📖 "${movie.title}" - ${movie.description}`
+                                }
+                              ])
+                            }
+                            className="text-xs bg-zinc-600 px-3 py-1 rounded"
+                          >
+                            Details
+                          </button>
+
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Plain text message fallback
+                  <p className="text-sm">{message.text}</p>
+                )}
+
               </div>
             </div>
-            
-            {/* Quick Actions */}
-            {message.quickActions && message.sender === 'ai' && (
-              <div className="mt-2 flex flex-wrap gap-2 ml-2">
-                {message.quickActions.map((action, idx) => {
-                  const Icon = action.type === 'play' ? Play : 
-                               action.type === 'add' ? Plus :
-                               action.type === 'remind' ? Clock : Users;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleQuickAction(action)}
-                      className="flex items-center gap-1.5 text-xs bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-lg px-3 py-2 transition font-medium"
-                    >
-                      <Icon className="w-3 h-3" />
-                      {action.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            
-            {/* Suggestions */}
-            {message.suggestions && message.sender === 'ai' && (
-              <div className="mt-2 space-y-2 ml-2">
-                {message.suggestions.map((suggestion, idx) => (
+
+            {/* Suggested prompts under AI message */}
+            {message.suggestions && (
+              <div className="mt-2 space-y-2">
+                {message.suggestions.map((s, i) => (
                   <button
-                    key={idx}
-                    onClick={() => handleSend(suggestion)}
-                    className="block w-full text-left text-xs bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg px-3 py-2 transition"
+                    key={i}
+                    onClick={() => handleSend(s)} // Auto-send suggestion
+                    className="block w-full text-left text-xs bg-zinc-800 hover:bg-zinc-700 rounded-lg px-3 py-2"
                   >
-                    {suggestion}
+                    {s}
                   </button>
                 ))}
               </div>
             )}
+
           </div>
         ))}
-        
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-zinc-800 rounded-2xl px-4 py-3">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            </div>
-          </div>
-        )}
+
+        {/* Typing indicator */}
+        {isTyping && <div className="text-gray-400 text-sm">AI is typing...</div>}
+
+        {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-zinc-800 bg-zinc-900">
-        {isListening && (
-          <div className="mb-2 text-center">
-            <div className="inline-flex items-center gap-2 bg-red-600/20 text-red-400 px-3 py-1 rounded-full text-xs">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              Listening...
-            </div>
-          </div>
-        )}
+      {/* Input area */}
+      <div className="p-4 border-t border-zinc-800">
         <div className="flex gap-2">
-          <button
-            onClick={handleVoiceInput}
-            className={`${isListening ? 'bg-red-600' : 'bg-zinc-700 hover:bg-zinc-600'} rounded-full p-3 transition`}
-          >
+
+          {/* Voice input button */}
+          <button onClick={handleVoiceInput} className="bg-zinc-700 p-3 rounded-full">
             <Mic className="w-5 h-5" />
           </button>
+
+          {/* Text input */}
           <input
-            type="text"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend(inputValue)}
+            onChange={(e) => setInputValue(e.target.value)} // Update input state
+            onKeyPress={(e) => e.key === 'Enter' && handleSend(inputValue)} // Send on Enter
             placeholder="Ask me anything about movies..."
-            className="flex-1 bg-zinc-800 text-white rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
+            className="flex-1 bg-zinc-800 rounded-full px-4 py-3 text-sm"
           />
-          <button
-            onClick={() => handleSend(inputValue)}
-            className="bg-red-600 hover:bg-red-700 text-white rounded-full p-3 transition"
-          >
+
+          {/* Send button */}
+          <button onClick={() => handleSend(inputValue)} className="bg-red-600 p-3 rounded-full">
             <Send className="w-5 h-5" />
           </button>
+
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Try: "Find the scene where..." or "Recommend movies for date night"
-        </p>
       </div>
     </div>
   );
